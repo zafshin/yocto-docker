@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  yocto:
+    build: .
+    container_name: my-yocto-container
+    tty: true
+    stdin_open: true
+    working_dir: /home/yocto
+    
+    environment:
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:en
+      - LC_ALL=en_US.UTF-8
+    volumes:
+      - ./projects:/home/yocto/projects
