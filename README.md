@@ -4,7 +4,7 @@ This project provides a ready-to-use Docker environment for Yocto development on
 
 ## Features
 - Ubuntu 24.04 base image with all Yocto dependencies pre-installed
-- Non-root user (`yocto`) with sudo access and password
+- Non-root user (`yocto`) with sudo access and password (`yoctopass`)
 - Persistent project directory via volume mount
 - Scripts for Windows and Linux to build, run, stop, export, import, and remove the container/image
 
