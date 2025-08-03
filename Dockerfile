@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     sudo git wget diffstat unzip texinfo gcc g++ build-essential chrpath socat \
     cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping \
     libsdl1.2-dev xterm curl locales nano passwd \
-    file gawk zstd \
+    file gawk zstd lz4 \
     && rm -rf /var/lib/apt/lists/*
 
 # Optional: Set locale
