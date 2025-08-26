@@ -1,15 +1,20 @@
 version: '3.8'
 services:
   yocto:
-    build: .
+    build:
+      context: .
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
     container_name: my-yocto-container
     tty: true
     stdin_open: true
-    working_dir: /home/yocto
-    
+    working_dir: /workspace
     environment:
       - LANG=en_US.UTF-8
       - LANGUAGE=en_US:en
       - LC_ALL=en_US.UTF-8
+      - USER_UID=${UID:-1000}
+      - USER_GID=${GID:-1000}
     volumes:
-      - ./projects:/home/yocto/projects
+      - ./workspace:/workspace

@@ -16,40 +16,34 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+# Install whois for mkpasswd (to hash password)
+RUN apt-get update && apt-get install -y whois && rm -rf /var/lib/apt/lists/*
+
 ARG USERNAME=yocto
 ARG USER_UID=1000
 ARG USER_GID=1000
-ARG USER_PASSWORD=yoctopass
-# Robust user/group creation: if UID/GID 1000 is taken, reuse or pick new
+
 RUN set -eux; \
-  if id "$USERNAME" >/dev/null 2>&1; then \
-    echo "User $USERNAME already exists."; \
-    usermod -aG sudo $USERNAME; \
-    echo "$USERNAME:$USER_PASSWORD" | chpasswd; \
-  else \
-    # Check if UID exists, if so, use next available UID
-    if getent passwd $USER_UID >/dev/null; then \
-      echo "UID $USER_UID already exists, finding next available UID"; \
-      USER_UID=$(awk -F: '($3>=1000)&&($3!=65534){print $3}' /etc/passwd | sort -n | tail -1); \
-      USER_UID=$((USER_UID+1)); \
+    # Create group if needed
+    if ! getent group "$USER_GID" >/dev/null; then \
+      groupadd -g "$USER_GID" "$USERNAME"; \
     fi; \
-    # Check if GID exists, if so, use next available GID
-    if getent group $USER_GID >/dev/null; then \
-      echo "GID $USER_GID already exists, finding next available GID"; \
-      USER_GID=$(awk -F: '($3>=1000)&&($3!=65534){print $3}' /etc/group | sort -n | tail -1); \
-      USER_GID=$((USER_GID+1)); \
+    # If UID exists, rename user; else, create new user
+    if id -u "$USER_UID" >/dev/null 2>&1; then \
+      EXISTING_USER=$(getent passwd "$USER_UID" | cut -d: -f1); \
+      usermod -l "$USERNAME" -d /home/"$USERNAME" -m -g "$USER_GID" "$EXISTING_USER"; \
+      groupmod -n "$USERNAME" "$EXISTING_USER"; \
+    elif id "$USERNAME" >/dev/null 2>&1; then \
+      usermod -u "$USER_UID" -g "$USER_GID" "$USERNAME"; \
+    else \
+      useradd -m -u "$USER_UID" -g "$USER_GID" -s /bin/bash -p '' "$USERNAME"; \
     fi; \
-    groupadd -g $USER_GID $USERNAME; \
-    useradd -m -u $USER_UID -g $USER_GID $USERNAME; \
-    echo "$USERNAME:$USER_PASSWORD" | chpasswd; \
-    usermod -aG sudo $USERNAME; \
-  fi; \
-  echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME; \
-  chmod 0440 /etc/sudoers.d/$USERNAME
-RUN cat /etc/passwd
+    usermod -aG sudo "$USERNAME"; \
+    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/"$USERNAME"; \
+    chmod 0440 /etc/sudoers.d/"$USERNAME"
 
 # Set working directory
-WORKDIR /home/${USERNAME}
+WORKDIR /workspace
 
 # Set bash as default shell for all users with home directories and for root
 RUN awk -F: '($7!="/bin/bash" && ($6 ~ /^\/home\// || $1=="root")) {print $1}' /etc/passwd | xargs -r -I{} usermod -s /bin/bash {} || true
