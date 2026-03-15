@@ -20,6 +20,16 @@ ARG USERNAME=yocto
 ARG USER_UID=1000
 ARG USER_GID=1000
 ARG USER_PASSWORD=yoctopass
+ENV YOCTO_USERNAME=${USERNAME}
+
+RUN set -eux; \
+  if id ubuntu >/dev/null 2>&1; then \
+    userdel -r ubuntu || userdel ubuntu || true; \
+  fi; \
+  if getent group ubuntu >/dev/null 2>&1; then \
+    groupdel ubuntu || true; \
+  fi
+
 # Robust user/group creation: if UID/GID 1000 is taken, reuse or pick new
 RUN set -eux; \
   if id "$USERNAME" >/dev/null 2>&1; then \
@@ -48,11 +58,14 @@ RUN set -eux; \
   chmod 0440 /etc/sudoers.d/$USERNAME
 RUN cat /etc/passwd
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
 # Set working directory
 WORKDIR /home/${USERNAME}
 
 # Set bash as default shell for all users with home directories and for root
 RUN awk -F: '($7!="/bin/bash" && ($6 ~ /^\/home\// || $1=="root")) {print $1}' /etc/passwd | xargs -r -I{} usermod -s /bin/bash {} || true
 
-# Switch to non-root user
-USER $USERNAME
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["bash"]

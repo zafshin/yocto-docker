@@ -8,8 +8,11 @@ services:
     working_dir: /home/yocto
     
     environment:
-      - LANG=en_US.UTF-8
-      - LANGUAGE=en_US:en
-      - LC_ALL=en_US.UTF-8
+      LANG: en_US.UTF-8
+      LANGUAGE: en_US:en
+      LC_ALL: en_US.UTF-8
+      LOCAL_UID: "${LOCAL_UID:-1000}"
+      LOCAL_GID: "${LOCAL_GID:-1000}"
+      LOCAL_UMASK: "${LOCAL_UMASK:-0022}"
     volumes:
       - ./projects:/home/yocto/projects

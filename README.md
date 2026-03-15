@@ -6,6 +6,7 @@ This project provides a ready-to-use Docker environment for Yocto development on
 - Ubuntu 24.04 base image with all Yocto dependencies pre-installed
 - Non-root user (`yocto`) with sudo access and password (`yoctopass`)
 - Persistent project directory via volume mount
+- Linux launch scripts map the container user to your host UID/GID so files created in `projects` keep normal local ownership
 - Scripts for Windows and Linux to build, run, stop, export, import, and remove the container/image
 
 ## Requirements
@@ -39,6 +40,8 @@ Run:
 ```
 
 This will start the container and mount the `projects` folder from your host to `/home/yocto/projects` in the container.
+
+On Linux, the run scripts pass your local UID, GID, and umask into the container so files written under `projects` are owned by your local user instead of an internal container-only account.
 
 ### 3. Run with Docker Compose (Optional)
 #### Windows
@@ -77,6 +80,19 @@ To load the image on another machine:
 - `remove-yocto-win.bat` (Windows)
 - `./remove-yocto-linux.sh` (Linux)
 
+### 7. Flash an SD Card on Linux
+If your build produced a `.wic.bz2` image, you can flash it to an SD card with:
+
+```sh
+sudo ./flash-yocto-linux.sh /dev/sdX
+```
+
+You can also pass the image path explicitly:
+
+```sh
+sudo ./flash-yocto-linux.sh /dev/sdX projects/poky/build/tmp/deploy/images/raspberrypi3-64/core-image-minimal-raspberrypi3-64.rootfs-20260314122809.wic.bz2
+```
+
 ## Notes & Limitations
 - **Case Sensitivity:** Windows filesystems (NTFS/exFAT) are case-insensitive. Yocto/bitbake requires a case-sensitive filesystem for TMPDIR. Do not mount your build directory from Windows if you need case sensitivity—build inside the container's native filesystem instead.
 - **Persistence:** Only files in the mounted `projects` directory are persistent. Files created elsewhere in the container will be lost when the container is removed unless you use `docker commit` or `docker cp`.
@@ -86,6 +102,7 @@ To load the image on another machine:
 ## Troubleshooting
 - If you get errors about missing images, make sure to build the image first.
 - If you get errors about case-insensitive filesystems, do not use a Windows bind mount for your build directory.
+- If you still see old file ownership behavior after updating these scripts, rebuild the image with `./build-yocto-linux.sh` before starting the container again.
 - To copy files in/out of the container, use `docker cp` or a shared volume.
 
 ## Example: Copying Files Out of the Container
